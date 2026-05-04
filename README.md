@@ -2,15 +2,15 @@
 
 Manage GitHub PR review comments from the terminal and from AI coding agents.
 
-PR review bots (Copilot, Cursor Bugbot, CodeRabbit, etc.) leave inline comments on your pull requests. agent-reviews gives you a CLI to list, filter, reply to, and watch those comments, plus agent skills that automate the entire triage-fix-reply loop.
+PR review bots (Copilot, Cursor Bugbot, CodeRabbit, etc.) leave inline comments on your pull requests. agent-reviews gives you a CLI to list, filter, reply to, and watch those comments, plus agent skills that proactively close clear findings and ask only when a comment needs human judgment.
 
 ## Why
 
 **`gh` CLI is fragile for review comments.** Agents frequently get the syntax wrong, fail to paginate, and can't reliably detect whether a comment has been replied to. agent-reviews provides a single, purpose-built interface that handles all of this correctly.
 
-**Bot reviews create a doom loop.** You fix one round of findings, push, and new comments appear. Fix those, push again, more comments. This cycle can eat hours. The included skills solve this with an integrated watcher that keeps fixing and replying until the bots go quiet.
+**Bot reviews create a doom loop.** You fix one round of findings, push, and new comments appear. Fix those, push again, more comments. This cycle can eat hours. The included skills break the loop by closing clear findings after verification, then asking only when a comment needs product, architecture, or risk judgment.
 
-**Works in cloud environments.** Most solutions rely on local tooling that isn't available in cloud or remote agent environments. agent-reviews works everywhere, so you can kick off a session, let the agent resolve all findings autonomously, and come back to a clean PR.
+**Works in cloud environments.** Most solutions rely on local tooling that isn't available in cloud or remote agent environments. agent-reviews works everywhere, so you can kick off a session, let the agent handle clear PR cleanup, and only step in for real tradeoffs.
 
 ## Install
 
@@ -33,10 +33,16 @@ Three skills are available, each as a slash command (no npm install required):
 Works with any agent that supports [Agent Skills](https://agentskills.io) (Claude Code, Cursor, Codex, etc.):
 
 ```bash
-npx skills add pbakaus/agent-reviews@resolve-agent-reviews
+gh skill install Tbsheff/agent-reviews resolve-agent-reviews
 ```
 
-Replace `resolve-agent-reviews` with whichever skill you want. Skills use `npx agent-reviews` at runtime, so the CLI is fetched automatically.
+Or with the `npx skills` installer:
+
+```bash
+npx skills add Tbsheff/agent-reviews --skill resolve-agent-reviews
+```
+
+Replace `resolve-agent-reviews` with whichever skill you want. Skills use `npx agent-reviews` at runtime, so the existing CLI is fetched automatically.
 
 > You can also use both: install the CLI globally for direct terminal use, and a skill for the agent workflow.
 
@@ -101,23 +107,23 @@ agent-reviews --pr 42
 
 ## Agent Skills
 
-The skills automate the full PR review resolution workflow:
+The skills automate the review-comment plumbing while keeping only meaningful judgment calls behind a user decision point:
 
 1. Fetch unanswered comments (all, bot-only, or human-only depending on skill)
 2. Evaluate each finding (true positive, false positive, actionable, etc.)
-3. Fix real issues and run lint/type-check
-4. Dismiss false positives with an explanation
-5. Reply to every comment with the outcome
+3. Execute clear low-risk fixes and replies after verification
+4. Present tradeoffs and a recommendation only for decision-needed findings
+5. Execute the selected path when a checkpoint is needed
 6. Watch for new comments and repeat until quiet
-7. Report a summary of all actions taken
+7. Report a summary of actions taken and anything left open
 
 ### Skill behavior
 
-- **True positives / actionable feedback** get fixed and replied with `Fixed in {commit}`
-- **False positives** get replied with `Won't fix: {reason}`
-- **Uncertain findings** prompt the user for guidance
-- All fixes are batched into a single commit before polling begins
-- Watch mode loops until no new comments appear for 10 minutes
+- **Clear true positives / actionable feedback** get fixed, verified, committed, and replied with `Fixed in {commit}`
+- **Clear false positives** get replied with `Won't fix: {reason}`
+- **Uncertain findings** are surfaced with tradeoffs instead of guessed through
+- Fixes are batched into a single commit before replies are posted
+- Watch mode runs after the current batch, and each new round uses the same proactive triage bar
 
 ## How It Works
 
@@ -161,6 +167,14 @@ Each comment displays its reply status:
 Polls the GitHub API at a configurable interval and reports new comments as they appear. Outputs both formatted text and JSON for AI agent consumption. Exits automatically after a configurable inactivity timeout (default: 10 minutes).
 
 ## Changelog
+
+### 1.0.1
+
+**Proactive triage with judgment gates.** Review skills now close clear, low-risk findings after verification, ask only when a comment needs product, architecture, or risk judgment, and use structured user-question tools when available.
+
+**Watch until quiet.** After the current batch is handled, skills start watch mode, process each new review round with the same proactive triage rules, and stop when no new comments arrive.
+
+**Fork distribution.** Install examples and skill metadata now point to the `Tbsheff/agent-reviews` fork for team distribution while continuing to use the existing `agent-reviews` CLI at runtime.
 
 ### 1.0.0
 

@@ -11,7 +11,7 @@
 			</h1>
 			<p class="subtitle">
 				You fix a round of review comments, push, and new ones appear.
-				agent-reviews handles the entire cycle: triage, fix, reply, watch, repeat.
+				agent-reviews triages the mess, closes clear findings, and only asks when a real tradeoff needs you.
 			</p>
 			<p class="aside">
 				Because nobody should spend their afternoon typing
@@ -20,7 +20,7 @@
 			<div class="actions">
 				<a href="#install" class="cta">Install</a>
 				<a
-					href="https://github.com/pbakaus/agent-reviews"
+					href="https://github.com/Tbsheff/agent-reviews"
 					target="_blank"
 					rel="noopener noreferrer"
 					class="ghost"

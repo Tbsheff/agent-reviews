@@ -19,8 +19,8 @@
 			</div>
 			<p>Install once, then use <code>/resolve-agent-reviews</code> as a slash command.</p>
 			<div class="cmd">
-				<code>npx skills add pbakaus/agent-reviews</code>
-				<button onclick={() => copy('npx skills add pbakaus/agent-reviews', 'skill')}>
+				<code>npx skills add Tbsheff/agent-reviews --skill resolve-agent-reviews</code>
+				<button onclick={() => copy('npx skills add Tbsheff/agent-reviews --skill resolve-agent-reviews', 'skill')}>
 					{copied === 'skill' ? 'Copied' : 'Copy'}
 				</button>
 			</div>

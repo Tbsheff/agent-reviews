@@ -1,16 +1,16 @@
 ---
 name: resolve-human-reviews
-description: Resolve human PR review comments on current PR. Fetches unanswered human comments, evaluates each piece of feedback, applies fixes, and replies to every comment with the outcome.
+description: Triage human PR review comments on current PR, present feedback with tradeoffs and a recommended approach, proactively execute clear low-risk fixes and replies, and ask the user only when a finding needs a tradeoff or judgment call.
 license: MIT
 compatibility: Requires git, gh (GitHub CLI), and Node.js installed.
 allowed-tools: Bash(npx agent-reviews *) Bash(pnpm dlx agent-reviews *) Bash(yarn dlx agent-reviews *) Bash(bunx agent-reviews *) Bash(git config *) Bash(git add *) Bash(git commit *) Bash(git push *)
 metadata:
-  author: pbakaus
+  author: Tbsheff
   version: "1.0.1"
-  homepage: https://github.com/pbakaus/agent-reviews
+  homepage: https://github.com/Tbsheff/agent-reviews
 ---
 
-Automatically resolve human review comments on the current PR. Fetches unanswered human feedback, evaluates each comment, applies fixes where appropriate, and replies to every comment with the outcome.
+Triage human review comments on the current PR. Be as proactive as possible: automatically fix, reply to, resolve, commit, and push clear low-risk outcomes after verifying them. Stop for user input only when a comment involves uncertainty, meaningful tradeoffs, architectural or business logic decisions, disagreement with the reviewer, or an action the user explicitly asked to approve.
 
 ## Prerequisites
 
@@ -18,7 +18,7 @@ All commands below use `npx agent-reviews`. If the project uses a different pack
 
 **Cloud environments only** (e.g., Codespaces, remote agents): verify git author identity so CI checks can map commits to the user. Run `git config --global --get user.email` and if empty or a placeholder, set it manually. Skip this check in local environments.
 
-## Phase 1: FETCH & FIX (synchronous)
+## Phase 1: FETCH & TRIAGE (synchronous)
 
 ### Step 1: Fetch All Human Comments (Expanded)
 
@@ -28,15 +28,11 @@ The CLI auto-detects the current branch, finds the associated PR, and authentica
 
 This shows only unanswered human comments with full detail: complete comment body (no truncation), diff hunk (code context), and all replies. Each comment shows its ID in brackets (e.g., `[12345678]`).
 
-If zero comments are returned, print "No unanswered human comments found" and skip to Phase 2.
+If zero comments are returned, print "No unanswered human comments found" and continue to Phase 3 so the watcher can catch new human comments.
 
-### Step 3: Process Each Unanswered Comment
+### Step 2: Evaluate Each Comment
 
-For each comment from the expanded output:
-
-#### A. Evaluate the Feedback
-
-Read the referenced code and the reviewer's comment. Human reviewers are generally more accurate and context-aware than bots. Treat their feedback with appropriate weight. Determine:
+For each comment from the expanded output, read the referenced code and the reviewer's comment. Human reviewers are generally more accurate and context-aware than bots, but their feedback can still involve tradeoffs. Determine:
 
 1. **ACTIONABLE** - The reviewer identified a real issue or requested a concrete change
 2. **DISCUSSION** - The comment raises a valid point but the right approach is unclear
@@ -49,11 +45,11 @@ Read the referenced code and the reviewer's comment. Human reviewers are general
 - Reviewer flags a naming, API, or architectural concern with a clear fix
 - Reviewer suggests a better approach with justification
 
-**Likely DISCUSSION -- ask the user:**
-- Reviewer suggests an architectural change you're unsure about
-- Comment involves a tradeoff (performance vs readability, etc.)
+**Likely DISCUSSION:**
+- Reviewer suggests an architectural change with meaningful tradeoffs
+- Comment involves performance vs readability, API stability vs cleanup, or similar tension
 - Reviewer's suggestion conflicts with patterns used elsewhere in the codebase
-- The feedback is subjective (style, naming preferences) without team consensus
+- The feedback is subjective without team consensus
 - You disagree with the feedback and want the author to weigh in
 
 **Likely ALREADY ADDRESSED:**
@@ -61,114 +57,137 @@ Read the referenced code and the reviewer's comment. Human reviewers are general
 - Another commit already fixed the issue
 - The comment refers to code that no longer exists
 
-#### B. Act on Evaluation
+### Step 3: Execute Clear Outcomes or Ask When Needed
 
-**If ACTIONABLE:** Fix the code. Track the comment ID and a brief description of the fix.
+After triage, split findings into clear outcomes and decision-needed items. Execute clear outcomes without waiting; present a triage packet only for items that need human input. Include every decision-needed comment.
 
-**If DISCUSSION:** Ask the user to consult the PR author. Apply their decision and track it.
+Use this structure:
 
-**If ALREADY ADDRESSED:** Track the comment ID and note why.
+```text
+## Human Review Triage
 
-Do NOT reply to comments yet. Replies happen after the commit (Step 5).
+### Recommendation
+I recommend Option {A/B/C}: {short rationale}.
 
-### Step 4: Commit and Push
+### Options
+1. Approve recommended decision-needed changes
+   - Includes: {decision-needed comment IDs}
+   - Outcome: {fix / reply-only / leave open}
+   - Tradeoff: {risk and benefit}
 
-After evaluating and fixing ALL unanswered comments:
+2. Leave decision-needed items open with author questions
+   - Includes: {comment IDs}
+   - Outcome: reply with the unresolved decision or tradeoff
+   - Tradeoff: {risk and benefit}
 
-1. Run your project's lint and type-check
-2. Stage, commit, and push:
+3. Override per comment
+   - Reply with comment IDs and action: fix, reply-only, skip, or ask author
+   - Tradeoff: Most control, slower closeout
+
+### Findings
+#### {comment_id} - @{reviewer} - {classification}
+- Feedback: {what the reviewer asked for}
+- Evidence: {code facts you verified}
+- Proposed action: {fix / reply-only / skip / ask author}
+- Tradeoffs: {risk of accepting vs declining}
+- Recommended: {specific recommendation}
+```
+
+Ask the user only when at least one finding needs a decision. If no findings need human input, skip this checkpoint, execute the clear outcomes, and report what happened.
+
+Use the host agent's structured question tool for this checkpoint when available:
+- In Claude Code, use `AskUserQuestion` / `Question` with the numbered options from the triage packet.
+- In Codex, use the equivalent `request_user_input` tool when it is available. If it is unavailable because the session is not in the mode that exposes it, switch to that mode first, then call `request_user_input`. Only fall back to numbered options in chat if the current Codex environment cannot switch modes or still does not expose the tool.
+
+Do not ask the user for clear low-risk outcomes. Do ask before:
+- Architectural or business logic changes
+- Subjective style or product calls
+- Fixes with meaningful side effects
+- Disagreeing with a human reviewer
+- Leaving a real issue unresolved
+
+## Phase 2: EXECUTE OUTCOMES
+
+Execute clear outcomes immediately after triage. If a decision packet was needed, execute only the actions the user selected.
+
+**For ACTIONABLE fixes:**
+1. Fix the code with the smallest safe change
+2. Run the project's lint and type-check
+3. Stage, commit, and push:
    ```bash
    git add -A
    git commit -m "fix: address PR review feedback
 
-   {List of changes made, grouped by reviewer}"
+   {List of changes, grouped by reviewer}"
    git push
    ```
-3. Capture the commit hash from the output.
+4. Capture the commit hash from the output
+5. Reply with `npx agent-reviews --reply <comment_id> "Fixed in {hash}. {Brief description of the fix}" --resolve`
 
-### Step 5: Reply to All Comments
+**For DISCUSSION replies:**
 
-Now that the commit hash exists, reply to every processed comment. The `--resolve` flag marks the review thread as resolved on GitHub.
+Run `npx agent-reviews --reply <comment_id> "{Outcome}. {Explanation of the decision and any changes made}"`
 
-**For each ACTIONABLE:**
+Use `--resolve` only if the user explicitly chose to resolve it.
 
-Run `npx agent-reviews --reply <comment_id> "Fixed in {hash}. {Brief description of the fix}" --resolve`
-
-**For each DISCUSSION (after user decision):**
-
-Run `npx agent-reviews --reply <comment_id> "{Outcome}. {Explanation of the decision and any changes made}" --resolve`
-
-**For each ALREADY ADDRESSED:**
+**For ALREADY ADDRESSED replies:**
 
 Run `npx agent-reviews --reply <comment_id> "Already addressed. {Explanation of when/how this was fixed}" --resolve`
 
-**DO NOT start Phase 2 until all replies are posted.**
+**For skipped comments:**
 
----
+Run `npx agent-reviews --reply <comment_id> "Skipped per user request" --resolve`
 
-## Phase 2: POLL FOR FOLLOW-UP COMMENTS (loop until quiet)
+**For ask-author comments:**
 
-The watcher exits immediately when new comments are found (after a 5s grace period to catch batch posts). This means you run it in a loop: start watcher, process any comments it returns, restart watcher, repeat until the watcher times out with no new comments.
+Run `npx agent-reviews --reply <comment_id> "Leaving open for author decision: {specific question or tradeoff}"` without `--resolve`.
 
-### Step 6: Start Watcher Loop
+## Phase 3: WATCH FOR NEW COMMENTS
 
-Repeat the following until the watcher exits with no new comments:
-
-**6a.** Launch the watcher in the background:
+Always start the watcher after the current batch is handled. The watcher exits immediately when new comments are found (after a 5s grace period to catch batch posts). Run it in a loop: start watcher, process any comments it returns, restart watcher, repeat until the watcher times out with no new comments.
 
 Run `npx agent-reviews --watch --humans-only` as a background task.
 
-**6b.** Wait for the background command to complete (default 10 minutes; override with `--timeout`).
+If new comments appear, triage them the same way: automatically handle clear low-risk outcomes and ask only for decision-needed items. Then restart the watcher.
 
-**6c.** Check the output:
-
-- **If new comments were found** (output contains `EXITING WITH NEW COMMENTS`):
-  1. Use `--detail <id>` to read each new comment's full detail
-  2. Process them exactly as in Phase 1, Steps 3-5 (evaluate, fix, commit, push, reply)
-  3. **Go back to Step 6a** to restart the watcher
-
-- **If no new comments** (output contains `WATCH COMPLETE`):
-  Stop looping and move to the Summary Report.
-
----
+When the watcher exits with no new comments, stop looping and move to the Summary Report.
 
 ## Summary Report
 
-After both phases complete, provide a summary:
+After executing clear outcomes and any user-selected actions, provide a summary:
 
 ```text
-## PR Review Resolution Summary
+## Human Review Resolution Summary
 
-### Results
+### Actions Taken
 - Fixed: X issues
-- Already addressed: X
-- Discussion resolved: X
+- Replied already addressed: X
+- Asked author / left open: X
 - Skipped per user: X
 
-### By Reviewer
-#### @reviewer-name
-- {description} - Fixed in {commit}
-- {description} - Already addressed
+### Needs User / Left Open
+- {comment_id}: {reason it remains untouched}
 
 ### Status
-All review comments addressed. Watch completed.
+Completed all clear outcomes and any user-selected actions. Watch completed with no new comments.
 ```
 
 ## Important Notes
 
 ### Response Policy
-- **Every comment gets a response** - No silent ignores
-- Replies keep reviewers informed and unblock approvals
-- Even "already addressed" comments deserve acknowledgement
+- **Every handled action gets a response** - no silent closeout work
+- Clear low-risk replies and resolutions do not need selection; decision-needed comments must not be replied to or resolved until the user chooses
+- Even "already addressed" comments deserve evidence
 
 ### User Interaction
-- Ask the user when the right approach is unclear
+- The user decision checkpoint is mandatory only when triage finds decision-needed items
+- Use Claude Code `AskUserQuestion` / `Question` or Codex `request_user_input` for the checkpoint. In Codex, switch modes to access `request_user_input` when needed and supported
+- Present tradeoffs and a recommendation before asking for selection; otherwise keep moving
 - Human reviewers often have context you don't - defer to the author when unsure
-- It's better to ask than to make a change the author wouldn't approve
 
 ### Best Practices
-- Human reviewers are generally more accurate than bots - default to trusting their feedback
+- Human reviewers are generally more accurate than bots, but still verify against the current diff
 - Keep fixes minimal and focused - don't refactor unrelated code
-- Ensure type-check and lint pass before committing
-- Group related fixes into a single commit
+- Ensure type-check and lint pass before committing fixes
+- Group related fixes into a single commit when they belong together
 - If a reviewer suggests a specific code change, prefer their version unless it introduces issues

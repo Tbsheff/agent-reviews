@@ -1,26 +1,26 @@
 {
   "name": "agent-reviews",
   "owner": {
-    "name": "Paul Bakaus"
+    "name": "Tyler Sheffield"
   },
   "metadata": {
-    "description": "CLI and Claude Code skills for managing GitHub PR review comments"
+    "description": "CLI and agent skills for proactively triaging GitHub PR review comments and closing clear findings"
   },
   "plugins": [
     {
       "name": "resolve-reviews",
       "source": "./",
-      "description": "Resolve all PR review comments (human and bot) on the current PR"
+      "description": "Proactively triage all PR review comments, close clear findings, ask only for judgment calls, and watch until quiet"
     },
     {
       "name": "resolve-agent-reviews",
       "source": "./",
-      "description": "Resolve PR review bot findings (Copilot, Cursor Bugbot, etc.) on the current PR"
+      "description": "Proactively triage PR review bot findings, close clear findings, ask only for judgment calls, and watch until quiet"
     },
     {
       "name": "resolve-human-reviews",
       "source": "./",
-      "description": "Resolve human PR review comments on the current PR"
+      "description": "Proactively triage human PR review comments, close clear findings, ask only for judgment calls, and watch until quiet"
     }
   ]
 }

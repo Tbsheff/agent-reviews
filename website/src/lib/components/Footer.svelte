@@ -1,8 +1,8 @@
 <footer>
 	<div class="footer-inner">
-		<span><a href="https://github.com/pbakaus" target="_blank" rel="noopener noreferrer">Paul Bakaus</a></span>
+		<span><a href="https://github.com/Tbsheff" target="_blank" rel="noopener noreferrer">Tyler Sheffield</a></span>
 		<span class="links">
-			<a href="https://github.com/pbakaus/agent-reviews" target="_blank" rel="noopener noreferrer">GitHub</a>
+			<a href="https://github.com/Tbsheff/agent-reviews" target="_blank" rel="noopener noreferrer">GitHub</a>
 			<a href="https://www.npmjs.com/package/agent-reviews" target="_blank" rel="noopener noreferrer">npm</a>
 			<span class="mit">MIT</span>
 		</span>

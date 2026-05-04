@@ -79,27 +79,29 @@
 		<div class="row-content">
 			<p>
 				The CLI is powerful on its own, but the skills are the killer feature.
-				Install one, type a slash command, and walk away. Your agent uses the
-				CLI under the hood to handle the full review cycle:
+				Install one, type a slash command, and let the agent handle the
+				clear stuff. Your agent uses the CLI under the hood to separate
+				straightforward closeout from judgment calls:
 			</p>
 			<dl class="outcomes">
 				<div class="outcome">
 					<dt>True positive</dt>
-					<dd>Fixes the bug, commits, replies with the commit hash.</dd>
+					<dd>Fixed narrowly, verified, committed, and replied with evidence.</dd>
 				</div>
 				<div class="outcome">
 					<dt>False positive</dt>
-					<dd>Replies "Won't fix" with an explanation of why.</dd>
+					<dd>Replied to with the reason why, then resolved when low-risk.</dd>
 				</div>
 				<div class="outcome">
 					<dt>Uncertain</dt>
-					<dd>Asks you before touching anything.</dd>
+					<dd>Presented with tradeoffs so you can choose the next move.</dd>
 				</div>
 			</dl>
 			<p>
-				Then it watches. When bots post new comments after your push
-				(they always do), it processes those too. The loop continues until
-				no new comments appear for 10 minutes.
+				When a comment needs product intent, architecture ownership, or a
+				real tradeoff, the agent presents options and a recommendation.
+				Then it watches for the next round and uses the same bar until the
+				PR goes quiet.
 			</p>
 
 			<div class="skills">

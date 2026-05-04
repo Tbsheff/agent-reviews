@@ -1,13 +1,13 @@
 {
   "name": "agent-reviews",
-  "description": "Manage GitHub PR review comments. Automatically triage, fix, and respond to review findings.",
+  "description": "Manage GitHub PR review comments. Proactively close clear findings and ask only for tradeoffs or judgment calls.",
   "version": "1.0.1",
   "author": {
-    "name": "Paul Bakaus",
-    "url": "https://github.com/pbakaus"
+    "name": "Tyler Sheffield",
+    "url": "https://github.com/Tbsheff"
   },
-  "homepage": "https://github.com/pbakaus/agent-reviews",
-  "repository": "https://github.com/pbakaus/agent-reviews",
+  "homepage": "https://github.com/Tbsheff/agent-reviews",
+  "repository": "https://github.com/Tbsheff/agent-reviews",
   "license": "MIT",
   "keywords": ["github", "pull-request", "code-review", "claude-code", "ai-agent", "review-bot"]
 }

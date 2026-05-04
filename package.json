@@ -1,12 +1,12 @@
 {
   "name": "agent-reviews",
   "version": "1.0.1",
-  "description": "CLI and agent skills for managing GitHub PR review comments. List, filter, reply, and watch for bot findings.",
+  "description": "CLI and agent skills for proactively triaging GitHub PR review comments and closing clear findings.",
   "license": "MIT",
-  "author": "Paul Bakaus",
+  "author": "Tyler Sheffield",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pbakaus/agent-reviews.git"
+    "url": "git+https://github.com/Tbsheff/agent-reviews.git"
   },
   "keywords": [
     "github",
@@ -29,7 +29,6 @@
   ],
   "scripts": {
     "install-skills": "node scripts/install-skills.js",
-    "prepare": "node scripts/install-skills.js",
     "test": "vitest run",
     "test:watch": "vitest"
   },

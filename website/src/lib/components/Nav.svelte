@@ -12,7 +12,7 @@
 	<div class="nav-inner">
 		<a href="/" class="wordmark">agent-reviews</a>
 		<a
-			href="https://github.com/pbakaus/agent-reviews"
+			href="https://github.com/Tbsheff/agent-reviews"
 			target="_blank"
 			rel="noopener noreferrer"
 			class="nav-link"
