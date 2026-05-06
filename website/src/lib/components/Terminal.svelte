@@ -30,15 +30,15 @@
 		{ text: '', cls: 'blank' },
 		{ text: '  Fetching unanswered bot comments... found 5', cls: 'cyan' },
 		{ text: '', cls: 'blank' },
-		{ text: '  Triage complete. Clear: 3, needs decision: 1', cls: 'ok' },
-		{ text: '  ok  Fixed null check + SQL injection  -> a1b2c3d', cls: 'ok' },
-		{ text: '  --  Replied: style preference        (not a bug)', cls: 'skip' },
+		{ text: '  Triage complete. Findings: 4', cls: 'ok' },
+		{ text: '  ok  Recommend fix: null check + SQL injection', cls: 'ok' },
+		{ text: '  --  Recommend reply-only: style preference', cls: 'skip' },
 		{ text: '  ??  Complexity tradeoff needs choice', cls: 'cyan' },
 		{ text: '', cls: 'blank' },
-		{ text: '  Recommendation: ask author before refactor.', cls: 'cyan' },
+		{ text: '  Recommendation: approve fixes, ask on refactor.', cls: 'cyan' },
 		{ text: '', cls: 'blank' },
-		{ text: '  Waiting only on the tradeoff.', cls: 'dim' },
-		{ text: '  Clear findings closed.', cls: 'done' },
+		{ text: '  Waiting for human approval.', cls: 'dim' },
+		{ text: '  No PR-visible action taken yet.', cls: 'done' },
 	];
 
 	const delays = lines.map((line) => {

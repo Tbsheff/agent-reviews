@@ -11,7 +11,7 @@
 			</h1>
 			<p class="subtitle">
 				You fix a round of review comments, push, and new ones appear.
-				agent-reviews triages the mess, closes clear findings, and only asks when a real tradeoff needs you.
+				agent-reviews triages the mess, verifies the evidence, and waits for approval before touching the PR.
 			</p>
 			<p class="aside">
 				Because nobody should spend their afternoon typing

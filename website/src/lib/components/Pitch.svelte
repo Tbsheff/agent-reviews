@@ -79,18 +79,18 @@
 		<div class="row-content">
 			<p>
 				The CLI is powerful on its own, but the skills are the killer feature.
-				Install one, type a slash command, and let the agent handle the
-				clear stuff. Your agent uses the CLI under the hood to separate
-				straightforward closeout from judgment calls:
+				Install one, type a slash command, and get a complete triage packet.
+				Your agent uses the CLI under the hood to verify each finding before
+				asking what should happen next:
 			</p>
 			<dl class="outcomes">
 				<div class="outcome">
 					<dt>True positive</dt>
-					<dd>Fixed narrowly, verified, committed, and replied with evidence.</dd>
+					<dd>Verified against the code and recommended for a narrow fix.</dd>
 				</div>
 				<div class="outcome">
 					<dt>False positive</dt>
-					<dd>Replied to with the reason why, then resolved when low-risk.</dd>
+					<dd>Recommended for reply-only handling with the reason why.</dd>
 				</div>
 				<div class="outcome">
 					<dt>Uncertain</dt>
@@ -98,10 +98,9 @@
 				</div>
 			</dl>
 			<p>
-				When a comment needs product intent, architecture ownership, or a
-				real tradeoff, the agent presents options and a recommendation.
-				Then it watches for the next round and uses the same bar until the
-				PR goes quiet.
+				The agent presents options and a recommendation, then waits. Fixes,
+				replies, resolves, commits, pushes, and watch processing all require
+				explicit approval.
 			</p>
 
 			<div class="skills">

@@ -1,16 +1,16 @@
 ---
 name: resolve-human-reviews
-description: Triage human PR review comments on current PR, present feedback with tradeoffs and a recommended approach, proactively execute clear low-risk fixes and replies, and ask the user only when a finding needs a tradeoff or judgment call.
+description: Investigate PR review comments on the current PR, verify each finding against the code, and present a human-readable triage packet with recommended actions. Do not make code changes, post GitHub replies, resolve threads, commit, push, or start/watch/process review loops until a human explicitly approves the specific action.
 license: MIT
 compatibility: Requires git, gh (GitHub CLI), and Node.js installed.
-allowed-tools: Bash(npx agent-reviews *) Bash(pnpm dlx agent-reviews *) Bash(yarn dlx agent-reviews *) Bash(bunx agent-reviews *) Bash(git config *) Bash(git add *) Bash(git commit *) Bash(git push *)
+allowed-tools: Bash(npx agent-reviews --humans-only --unanswered --expanded) Bash(pnpm dlx agent-reviews --humans-only --unanswered --expanded) Bash(yarn dlx agent-reviews --humans-only --unanswered --expanded) Bash(bunx agent-reviews --humans-only --unanswered --expanded) Bash(git config --global --get user.email)
 metadata:
   author: Tbsheff
-  version: "1.0.1"
+  version: "1.0.2"
   homepage: https://github.com/Tbsheff/agent-reviews
 ---
 
-Triage human review comments on the current PR. Be as proactive as possible: automatically fix, reply to, resolve, commit, and push clear low-risk outcomes after verifying them. Stop for user input only when a comment involves uncertainty, meaningful tradeoffs, architectural or business logic decisions, disagreement with the reviewer, or an action the user explicitly asked to approve.
+Triage review comments on the current PR. Be proactive in investigation only: fetch comments, inspect the referenced code, verify whether each finding is valid, and recommend the smallest safe next action. Stop after presenting the triage packet. Do not edit files, post GitHub replies, resolve threads, stage, commit, push, or start/watch/process follow-up review loops until a human explicitly approves the specific action.
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ The CLI auto-detects the current branch, finds the associated PR, and authentica
 
 This shows only unanswered human comments with full detail: complete comment body (no truncation), diff hunk (code context), and all replies. Each comment shows its ID in brackets (e.g., `[12345678]`).
 
-If zero comments are returned, print "No unanswered human comments found" and continue to Phase 3 so the watcher can catch new human comments.
+If zero comments are returned, print "No unanswered human comments found" and stop. Do not start watch mode unless the user explicitly approves watching for new human comments.
 
 ### Step 2: Evaluate Each Comment
 
@@ -57,9 +57,9 @@ For each comment from the expanded output, read the referenced code and the revi
 - Another commit already fixed the issue
 - The comment refers to code that no longer exists
 
-### Step 3: Execute Clear Outcomes or Ask When Needed
+### Step 3: Present Findings and Wait
 
-After triage, split findings into clear outcomes and decision-needed items. Execute clear outcomes without waiting; present a triage packet only for items that need human input. Include every decision-needed comment.
+After triage, present all findings to the user in one triage packet. Include clear actionable feedback, discussion items, already-addressed comments, and uncertain items. The agent may recommend a default path, but the user must select or approve the path before any PR-visible action.
 
 Use this structure:
 
@@ -88,32 +88,36 @@ I recommend Option {A/B/C}: {short rationale}.
 #### {comment_id} - @{reviewer} - {classification}
 - Feedback: {what the reviewer asked for}
 - Evidence: {code facts you verified}
-- Proposed action: {fix / reply-only / skip / ask author}
+- Recommended action: {fix / reply-only / skip / leave open / ask author}
 - Tradeoffs: {risk of accepting vs declining}
 - Recommended: {specific recommendation}
 ```
 
-Ask the user only when at least one finding needs a decision. If no findings need human input, skip this checkpoint, execute the clear outcomes, and report what happened.
+Ask the user to choose an option or provide per-comment actions. Then stop and wait for the user response before editing code, replying, resolving, committing, pushing, or continuing to watch.
 
 Use the host agent's structured question tool for this checkpoint when available:
 - In Claude Code, use `AskUserQuestion` / `Question` with the numbered options from the triage packet.
 - In Codex, use the equivalent `request_user_input` tool when it is available. If it is unavailable because the session is not in the mode that exposes it, switch to that mode first, then call `request_user_input`. Only fall back to numbered options in chat if the current Codex environment cannot switch modes or still does not expose the tool.
 
-Do not ask the user for clear low-risk outcomes. Do ask before:
-- Architectural or business logic changes
-- Subjective style or product calls
-- Fixes with meaningful side effects
-- Disagreeing with a human reviewer
-- Leaving a real issue unresolved
+Do not proceed without user selection. Before user selection, do not:
+- Edit code
+- Reply to comments
+- Resolve review threads
+- Commit
+- Push
+- Start or restart the watcher
 
-## Phase 2: EXECUTE OUTCOMES
+## Phase 2: EXECUTE HUMAN-APPROVED OUTCOMES ONLY
 
-Execute clear outcomes immediately after triage. If a decision packet was needed, execute only the actions the user selected.
+Execute only the specific actions the human approved. If the user approved fixes, make the smallest safe code changes and run verification. Stop again before posting GitHub replies, resolving threads, committing, pushing, or watching unless those actions were also explicitly approved.
+
+Do not treat approval to fix as approval to reply, resolve, commit, push, or watch. Each category needs explicit approval.
 
 **For ACTIONABLE fixes:**
 1. Fix the code with the smallest safe change
 2. Run the project's lint and type-check
-3. Stage, commit, and push:
+3. Stop and summarize the local changes and verification result if commit/push approval was not already explicit
+4. Only if the human explicitly approved committing and pushing, request any required tool permission, then stage, commit, and push:
    ```bash
    git add -A
    git commit -m "fix: address PR review feedback
@@ -121,40 +125,40 @@ Execute clear outcomes immediately after triage. If a decision packet was needed
    {List of changes, grouped by reviewer}"
    git push
    ```
-4. Capture the commit hash from the output
-5. Reply with `npx agent-reviews --reply <comment_id> "Fixed in {hash}. {Brief description of the fix}" --resolve`
+5. Capture the commit hash from the output
+6. Only if the human explicitly approved posting replies and resolving threads, request any required tool permission, then reply with `npx agent-reviews --reply <comment_id> "Fixed in {hash}. {Brief description of the fix}" --resolve`; otherwise provide the suggested reply text in chat only
 
 **For DISCUSSION replies:**
 
-Run `npx agent-reviews --reply <comment_id> "{Outcome}. {Explanation of the decision and any changes made}"`
+Only if the human explicitly approved posting this reply, request any required tool permission, then run `npx agent-reviews --reply <comment_id> "{Outcome}. {Explanation of the decision and any changes made}"`; otherwise provide the reply text in chat only.
 
 Use `--resolve` only if the user explicitly chose to resolve it.
 
 **For ALREADY ADDRESSED replies:**
 
-Run `npx agent-reviews --reply <comment_id> "Already addressed. {Explanation of when/how this was fixed}" --resolve`
+Only if the human explicitly approved posting this reply, request any required tool permission, then run `npx agent-reviews --reply <comment_id> "Already addressed. {Explanation of when/how this was fixed}"`. Include `--resolve` only when thread resolution was separately approved; otherwise provide the reply text in chat only.
 
 **For skipped comments:**
 
-Run `npx agent-reviews --reply <comment_id> "Skipped per user request" --resolve`
+Only if the human explicitly approved posting this reply, request any required tool permission, then run `npx agent-reviews --reply <comment_id> "Skipped per user request"`. Include `--resolve` only when thread resolution was separately approved; otherwise provide the reply text in chat only.
 
 **For ask-author comments:**
 
-Run `npx agent-reviews --reply <comment_id> "Leaving open for author decision: {specific question or tradeoff}"` without `--resolve`.
+Only if the human explicitly approved posting this reply, request any required tool permission, then run `npx agent-reviews --reply <comment_id> "Leaving open for author decision: {specific question or tradeoff}"` without `--resolve`; otherwise provide the reply text in chat only.
 
-## Phase 3: WATCH FOR NEW COMMENTS
+## Phase 3: WATCH ONLY WHEN EXPLICITLY APPROVED
 
-Always start the watcher after the current batch is handled. The watcher exits immediately when new comments are found (after a 5s grace period to catch batch posts). Run it in a loop: start watcher, process any comments it returns, restart watcher, repeat until the watcher times out with no new comments.
+Do not start watch mode by default.
 
-Run `npx agent-reviews --watch --humans-only` as a background task.
+Only run watch mode if the human explicitly approves watching for new comments. When approved, request any required tool permission, then run `npx agent-reviews --watch --humans-only` as a background task.
 
-If new comments appear, triage them the same way: automatically handle clear low-risk outcomes and ask only for decision-needed items. Then restart the watcher.
+When watch mode returns new comments, treat them as a new triage batch: investigate and present findings, then stop for human review. Do not auto-fix, auto-reply, auto-resolve, commit, push, or continue the watch loop without explicit approval for that batch.
 
-When the watcher exits with no new comments, stop looping and move to the Summary Report.
+When the watcher exits with no new comments, move to the Summary Report.
 
 ## Summary Report
 
-After executing clear outcomes and any user-selected actions, provide a summary:
+After executing the human-approved actions and any approved watch pass, provide a summary:
 
 ```text
 ## Human Review Resolution Summary
@@ -169,20 +173,22 @@ After executing clear outcomes and any user-selected actions, provide a summary:
 - {comment_id}: {reason it remains untouched}
 
 ### Status
-Completed all clear outcomes and any user-selected actions. Watch completed with no new comments.
+Completed the human-approved actions. Watch only ran if explicitly approved.
 ```
 
 ## Important Notes
 
 ### Response Policy
-- **Every handled action gets a response** - no silent closeout work
-- Clear low-risk replies and resolutions do not need selection; decision-needed comments must not be replied to or resolved until the user chooses
+- Every recommended action must be shown to the human before execution.
+- No code changes, GitHub replies, thread resolutions, commits, pushes, or watch-loop processing may happen without explicit human approval.
+- A "clear" or "low-risk" finding means the recommendation can be confident. It does not grant permission to execute.
+- Replies should document evidence, but only after the human approves posting them.
 - Even "already addressed" comments deserve evidence
 
 ### User Interaction
-- The user decision checkpoint is mandatory only when triage finds decision-needed items
+- The user decision checkpoint is mandatory after every triage packet, including comments returned by watch mode
 - Use Claude Code `AskUserQuestion` / `Question` or Codex `request_user_input` for the checkpoint. In Codex, switch modes to access `request_user_input` when needed and supported
-- Present tradeoffs and a recommendation before asking for selection; otherwise keep moving
+- Present tradeoffs and a recommendation before asking for selection
 - Human reviewers often have context you don't - defer to the author when unsure
 
 ### Best Practices

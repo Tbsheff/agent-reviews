@@ -2,15 +2,15 @@
 
 Manage GitHub PR review comments from the terminal and from AI coding agents.
 
-PR review bots (Copilot, Cursor Bugbot, CodeRabbit, etc.) leave inline comments on your pull requests. agent-reviews gives you a CLI to list, filter, reply to, and watch those comments, plus agent skills that proactively close clear findings and ask only when a comment needs human judgment.
+PR review bots (Copilot, Cursor Bugbot, CodeRabbit, etc.) leave inline comments on your pull requests. agent-reviews gives you a CLI to list, filter, reply to, and watch those comments, plus agent skills that proactively investigate findings and present recommended actions for human review before any code change, GitHub reply, thread resolution, commit, push, or watch-loop processing.
 
 ## Why
 
 **`gh` CLI is fragile for review comments.** Agents frequently get the syntax wrong, fail to paginate, and can't reliably detect whether a comment has been replied to. agent-reviews provides a single, purpose-built interface that handles all of this correctly.
 
-**Bot reviews create a doom loop.** You fix one round of findings, push, and new comments appear. Fix those, push again, more comments. This cycle can eat hours. The included skills break the loop by closing clear findings after verification, then asking only when a comment needs product, architecture, or risk judgment.
+**Bot reviews create a doom loop.** You fix one round of findings, push, and new comments appear. Fix those, push again, more comments. This cycle can eat hours. The included skills break the loop by collecting evidence, recommending a path, and waiting for explicit human approval before any PR-visible action.
 
-**Works in cloud environments.** Most solutions rely on local tooling that isn't available in cloud or remote agent environments. agent-reviews works everywhere, so you can kick off a session, let the agent handle clear PR cleanup, and only step in for real tradeoffs.
+**Works in cloud environments.** Most solutions rely on local tooling that isn't available in cloud or remote agent environments. agent-reviews works everywhere, so you can kick off a session, review the triage packet, and approve exactly what should happen next.
 
 ## Install
 
@@ -107,23 +107,23 @@ agent-reviews --pr 42
 
 ## Agent Skills
 
-The skills automate the review-comment plumbing while keeping only meaningful judgment calls behind a user decision point:
+The skills automate the review-comment investigation while keeping every PR-visible action behind a human approval point:
 
 1. Fetch unanswered comments (all, bot-only, or human-only depending on skill)
 2. Evaluate each finding (true positive, false positive, actionable, etc.)
-3. Execute clear low-risk fixes and replies after verification
-4. Present tradeoffs and a recommendation only for decision-needed findings
-5. Execute the selected path when a checkpoint is needed
-6. Watch for new comments and repeat until quiet
-7. Report a summary of actions taken and anything left open
+3. Present every finding with evidence, tradeoffs, and a recommended action
+4. Wait for explicit human approval before any fix, reply, resolve, commit, push, or watch-loop processing
+5. Execute only the approved action categories
+6. Watch for new comments only when approved, then return to triage and stop for review
+7. Report a summary of approved actions taken and anything left open
 
 ### Skill behavior
 
-- **Clear true positives / actionable feedback** get fixed, verified, committed, and replied with `Fixed in {commit}`
-- **Clear false positives** get replied with `Won't fix: {reason}`
+- **True positives / actionable feedback** are verified and recommended for fixes, but not executed until approved
+- **False positives** are recommended for reply-only handling with `Won't fix: {reason}`, but replies are not posted until approved
 - **Uncertain findings** are surfaced with tradeoffs instead of guessed through
-- Fixes are batched into a single commit before replies are posted
-- Watch mode runs after the current batch, and each new round uses the same proactive triage bar
+- Fix, reply, resolve, commit, push, and watch are separate approval categories
+- Watch mode only runs when approved; any new comments become a fresh triage packet
 
 ## How It Works
 
@@ -168,11 +168,17 @@ Polls the GitHub API at a configurable interval and reports new comments as they
 
 ## Changelog
 
+### 1.0.2
+
+**Human approval before PR-visible actions.** Review skills now treat proactivity as investigation only. They fetch comments, inspect code, verify findings, and recommend actions, but they must stop for human approval before code changes, GitHub replies, thread resolution, commits, pushes, or watch-loop processing.
+
+**Watch requires approval.** Watch mode no longer starts or continues by default. If approved, comments returned by watch mode become a fresh triage packet and require another human decision checkpoint.
+
 ### 1.0.1
 
-**Proactive triage with judgment gates.** Review skills now close clear, low-risk findings after verification, ask only when a comment needs product, architecture, or risk judgment, and use structured user-question tools when available.
+**Previous behavior, now superseded.** Version 1.0.1 allowed skills to close clear findings after verification and ask only when a comment needed product, architecture, or risk judgment. Version 1.0.2 replaces that behavior with mandatory human approval before code changes, replies, resolves, commits, pushes, or watch-loop processing.
 
-**Watch until quiet.** After the current batch is handled, skills start watch mode, process each new review round with the same proactive triage rules, and stop when no new comments arrive.
+**Previous watch behavior, now superseded.** Version 1.0.1 started watch mode after the current batch and processed new review rounds until quiet. Version 1.0.2 requires explicit approval before starting watch and stops for another human decision checkpoint when watch returns comments.
 
 **Fork distribution.** Install examples and skill metadata now point to the `Tbsheff/agent-reviews` fork for team distribution while continuing to use the existing `agent-reviews` CLI at runtime.
 

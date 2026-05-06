@@ -1,7 +1,7 @@
 {
   "name": "agent-reviews",
-  "version": "1.0.1",
-  "description": "CLI and agent skills for proactively triaging GitHub PR review comments and closing clear findings.",
+  "version": "1.0.2",
+  "description": "CLI and agent skills for investigating GitHub PR review comments and presenting human-approved action plans.",
   "license": "MIT",
   "author": "Tyler Sheffield",
   "repository": {

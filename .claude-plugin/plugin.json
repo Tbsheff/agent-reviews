@@ -1,7 +1,7 @@
 {
   "name": "agent-reviews",
-  "description": "Manage GitHub PR review comments. Proactively close clear findings and ask only for tradeoffs or judgment calls.",
-  "version": "1.0.1",
+  "description": "Manage GitHub PR review comments. Investigate proactively, then require human approval before PR-visible actions.",
+  "version": "1.0.2",
   "author": {
     "name": "Tyler Sheffield",
     "url": "https://github.com/Tbsheff"

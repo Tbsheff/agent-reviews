@@ -4,23 +4,23 @@
     "name": "Tyler Sheffield"
   },
   "metadata": {
-    "description": "CLI and agent skills for proactively triaging GitHub PR review comments and closing clear findings"
+    "description": "CLI and agent skills for investigating GitHub PR review comments and presenting human-approved action plans"
   },
   "plugins": [
     {
       "name": "resolve-reviews",
       "source": "./",
-      "description": "Proactively triage all PR review comments, close clear findings, ask only for judgment calls, and watch until quiet"
+      "description": "Investigate all PR review comments and require human approval before fixes, replies, resolves, commits, pushes, or watch processing"
     },
     {
       "name": "resolve-agent-reviews",
       "source": "./",
-      "description": "Proactively triage PR review bot findings, close clear findings, ask only for judgment calls, and watch until quiet"
+      "description": "Investigate PR review bot findings and require human approval before fixes, replies, resolves, commits, pushes, or watch processing"
     },
     {
       "name": "resolve-human-reviews",
       "source": "./",
-      "description": "Proactively triage human PR review comments, close clear findings, ask only for judgment calls, and watch until quiet"
+      "description": "Investigate human PR review comments and require human approval before fixes, replies, resolves, commits, pushes, or watch processing"
     }
   ]
 }
