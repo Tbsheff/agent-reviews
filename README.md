@@ -2,13 +2,13 @@
 
 Manage GitHub PR review comments from the terminal and from AI coding agents.
 
-PR review bots (Copilot, Cursor Bugbot, CodeRabbit, etc.) leave inline comments on your pull requests. agent-reviews gives you a CLI to list, filter, reply to, and watch those comments, plus agent skills that proactively investigate findings and present recommended actions for human review before any code change, GitHub reply, thread resolution, commit, push, or watch-loop processing.
+PR review bots (Copilot, Cursor Bugbot, CodeRabbit, etc.) leave inline comments on your pull requests. agent-reviews gives you a CLI to list, filter, reply to, and watch those comments, plus agent skills that proactively investigate findings and present recommended closeout plans for human review before any code change, GitHub reply, thread resolution, commit, or push.
 
 ## Why
 
 **`gh` CLI is fragile for review comments.** Agents frequently get the syntax wrong, fail to paginate, and can't reliably detect whether a comment has been replied to. agent-reviews provides a single, purpose-built interface that handles all of this correctly.
 
-**Bot reviews create a doom loop.** You fix one round of findings, push, and new comments appear. Fix those, push again, more comments. This cycle can eat hours. The included skills break the loop by collecting evidence, recommending a path, and waiting for explicit human approval before any PR-visible action.
+**Bot reviews create a doom loop.** You fix one round of findings, push, and new comments appear. Fix those, push again, more comments. This cycle can eat hours. The included skills break the loop by collecting evidence, recommending a closeout path, and executing the approved fix/reply/resolve/commit/push bundle end-to-end.
 
 **Works in cloud environments.** Most solutions rely on local tooling that isn't available in cloud or remote agent environments. agent-reviews works everywhere, so you can kick off a session, review the triage packet, and approve exactly what should happen next.
 
@@ -112,18 +112,18 @@ The skills automate the review-comment investigation while keeping every PR-visi
 1. Fetch unanswered comments (all, bot-only, or human-only depending on skill)
 2. Evaluate each finding (true positive, false positive, actionable, etc.)
 3. Present every finding with evidence, tradeoffs, and a recommended action
-4. Wait for explicit human approval before any fix, reply, resolve, commit, push, or watch-loop processing
-5. Execute only the approved action categories
-6. Watch for new comments only when approved, then return to triage and stop for review
+4. Wait for explicit human approval of a closeout plan before any fix, reply, resolve, commit, or push
+5. Execute the approved closeout bundle end-to-end, including replies and thread resolution when listed
+6. Watch for new comments after closeout unless the user opts out, then return to triage and stop for review
 7. Report a summary of approved actions taken and anything left open
 
 ### Skill behavior
 
-- **True positives / actionable feedback** are verified and recommended for fixes, but not executed until approved
-- **False positives** are recommended for reply-only handling with `Won't fix: {reason}`, but replies are not posted until approved
+- **True positives / actionable feedback** are verified and recommended for a closeout bundle, then fixed, verified, committed, pushed, replied to, and resolved when that bundle is approved
+- **False positives** are recommended for reply-only handling with `Won't fix: {reason}`, then replied to and resolved when that bundle is approved
 - **Uncertain findings** are surfaced with tradeoffs instead of guessed through
-- Fix, reply, resolve, commit, push, and watch are separate approval categories
-- Watch mode only runs when approved; any new comments become a fresh triage packet
+- Fix, reply, resolve, commit, and push remain gated unless explicitly bundled in the selected approval option
+- Watch mode runs after closeout unless the user opts out; any new comments become a fresh triage packet
 
 ## How It Works
 
@@ -167,6 +167,12 @@ Each comment displays its reply status:
 Polls the GitHub API at a configurable interval and reports new comments as they appear. Outputs both formatted text and JSON for AI agent consumption. Exits automatically after a configurable inactivity timeout (default: 10 minutes).
 
 ## Changelog
+
+### 1.0.3
+
+**Bundled closeout approval.** Review skills now make the selected option the approval source of truth. If the user approves a bundle that lists fix, commit, push, reply, and resolve, the agent carries that closeout through without asking again after the code fix.
+
+**Watch after closeout.** Watch mode runs after an approved closeout unless the user opts out. New watch comments still become a fresh triage packet and require a new approval.
 
 ### 1.0.2
 

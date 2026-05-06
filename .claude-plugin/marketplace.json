@@ -4,23 +4,23 @@
     "name": "Tyler Sheffield"
   },
   "metadata": {
-    "description": "CLI and agent skills for investigating GitHub PR review comments and presenting human-approved action plans"
+    "description": "CLI and agent skills for investigating GitHub PR review comments and executing human-approved closeout plans"
   },
   "plugins": [
     {
       "name": "resolve-reviews",
       "source": "./",
-      "description": "Investigate all PR review comments and require human approval before fixes, replies, resolves, commits, pushes, or watch processing"
+      "description": "Investigate all PR review comments, then execute the human-approved fix/reply/resolve/commit/push closeout plan"
     },
     {
       "name": "resolve-agent-reviews",
       "source": "./",
-      "description": "Investigate PR review bot findings and require human approval before fixes, replies, resolves, commits, pushes, or watch processing"
+      "description": "Investigate PR review bot findings, then execute the human-approved fix/reply/resolve/commit/push closeout plan"
     },
     {
       "name": "resolve-human-reviews",
       "source": "./",
-      "description": "Investigate human PR review comments and require human approval before fixes, replies, resolves, commits, pushes, or watch processing"
+      "description": "Investigate human PR review comments, then execute the human-approved fix/reply/resolve/commit/push closeout plan"
     }
   ]
 }

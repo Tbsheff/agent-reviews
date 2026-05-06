@@ -99,8 +99,8 @@
 			</dl>
 			<p>
 				The agent presents options and a recommendation, then waits. Fixes,
-				replies, resolves, commits, pushes, and watch processing all require
-				explicit approval.
+				replies, resolves, commits, and pushes run end-to-end when the selected
+				closeout plan lists them. Watch runs after closeout unless you opt out.
 			</p>
 
 			<div class="skills">

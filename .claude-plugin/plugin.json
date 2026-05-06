@@ -1,7 +1,7 @@
 {
   "name": "agent-reviews",
-  "description": "Manage GitHub PR review comments. Investigate proactively, then require human approval before PR-visible actions.",
-  "version": "1.0.2",
+  "description": "Manage GitHub PR review comments. Investigate proactively, then execute human-approved closeout plans.",
+  "version": "1.0.3",
   "author": {
     "name": "Tyler Sheffield",
     "url": "https://github.com/Tbsheff"
