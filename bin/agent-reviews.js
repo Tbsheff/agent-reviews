@@ -491,6 +491,13 @@ async function main() {
           proxyFetch
         );
 
+        if (resolveResult.skipped) {
+          console.error(
+            `${colors.red}Reply posted, but thread resolution was skipped (${resolveResult.reason})${colors.reset}`
+          );
+          process.exit(1);
+        }
+
         if (!options.json) {
           if (resolveResult.resolved) {
             console.log(
@@ -500,16 +507,13 @@ async function main() {
             console.log(
               `${colors.dim}Thread already resolved${colors.reset}`
             );
-          } else if (resolveResult.skipped) {
-            console.log(
-              `${colors.dim}Thread resolution skipped (${resolveResult.reason})${colors.reset}`
-            );
           }
         }
       } catch (error) {
-        console.warn(
-          `${colors.yellow}Reply posted, but thread resolution failed: ${error.message}${colors.reset}`
+        console.error(
+          `${colors.red}Reply posted, but thread resolution failed: ${error.message}${colors.reset}`
         );
+        process.exit(1);
       }
     }
 

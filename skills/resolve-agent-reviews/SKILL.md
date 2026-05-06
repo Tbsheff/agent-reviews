@@ -3,11 +3,19 @@ name: resolve-agent-reviews
 description: Investigate PR review comments on the current PR, verify each finding against the code, and present a human-readable triage packet with recommended closeout actions. Do not make code changes, post GitHub replies, resolve threads, commit, or push until a human explicitly approves the closeout plan.
 license: MIT
 compatibility: Requires git, gh (GitHub CLI), and Node.js installed.
-allowed-tools: Bash(npx agent-reviews *) Bash(pnpm dlx agent-reviews *) Bash(yarn dlx agent-reviews *) Bash(bunx agent-reviews *) Bash(git config --global --get user.email) Bash(git add *) Bash(git commit *) Bash(git push *)
+allowed-tools: AskUserQuestion(*) Question(*) request_user_input(*) Bash(npx agent-reviews *) Bash(pnpm dlx agent-reviews *) Bash(yarn dlx agent-reviews *) Bash(bunx agent-reviews *) Bash(git config --global --get user.email) Bash(git add *) Bash(git commit *) Bash(git push *)
 metadata:
   author: Tbsheff
-  version: "1.0.3"
+  version: "1.0.4"
   homepage: https://github.com/Tbsheff/agent-reviews
+  requires_structured_user_checkpoint: true
+  checkpoint_tools:
+    claude:
+      - AskUserQuestion
+      - Question
+    codex:
+      - request_user_input
+  closeout_cli: "agent-reviews --reply <id> <message> [--resolve]"
 ---
 
 Triage review comments on the current PR. Be proactive in investigation only until the user chooses a closeout path: fetch comments, inspect the referenced code, verify whether each finding is valid, and recommend the smallest safe next action. Stop after presenting the triage packet. Do not edit files, post GitHub replies, resolve threads, stage, commit, or push until a human explicitly approves the closeout plan.
@@ -102,11 +110,30 @@ I recommend Option {A/B/C}: {short rationale}.
 - Recommended: {specific recommendation}
 ```
 
-Ask the user to choose an option or provide per-comment actions. Then stop and wait for the user response before editing code, replying, resolving, committing, or pushing. The selected option is the approval source of truth: if it includes commit/push, replies, or thread resolution, execute those steps after the fix and verification without asking again.
+Call the host structured question tool with these numbered options, then stop and wait for the user response before editing code, replying, resolving, committing, or pushing. The selected option is the approval source of truth: if it includes commit/push, replies, or thread resolution, execute those steps after the fix and verification without asking again.
 
-Use the host agent's structured question tool for this checkpoint when available:
-- In Claude Code, use `AskUserQuestion` / `Question` with the numbered options from the triage packet.
-- In Codex, use the equivalent `request_user_input` tool when it is available. If it is unavailable because the session is not in the mode that exposes it, use the host's supported mode-switch mechanism when one exists, then call `request_user_input`. Only fall back to numbered options in chat if the current Codex environment cannot switch modes or still does not expose the tool.
+### Mandatory User-Question Tool Checkpoint
+
+This checkpoint MUST use a structured question tool. Plain chat is allowed only after recording that the required tool was unavailable and why. Do not present the options as ordinary chat until you have verified that no supported question tool is callable.
+
+Follow this exact protocol:
+
+1. **Claude Code:** call `AskUserQuestion` / `Question` with the numbered options from the triage packet.
+2. **Codex:** call `request_user_input` with the numbered options from the triage packet when that tool is present.
+3. **Codex mode fallback:** if `request_user_input` is not present because the current mode does not expose it, use the host's supported mode-switch mechanism when one exists, then call `request_user_input`.
+4. **Chat fallback only:** if no user-question tool is callable after the checks above, present the numbered options in chat and explicitly include `Structured checkpoint unavailable: {reason}` before the options.
+5. After the user answers, write an approval record before executing anything:
+
+```text
+## Approval Record
+- Selected option: {number / per-comment override}
+- Fixes approved: {comment IDs or none}
+- Commit/push approved: yes/no
+- Replies approved: {comment IDs or none}
+- Resolves approved: {comment IDs or none}
+- Watch approved: yes/no
+- Approval source: {AskUserQuestion / Question / request_user_input / chat fallback}
+```
 
 Do not proceed without user selection. Before user selection, do not:
 - Edit code
@@ -122,6 +149,8 @@ Execute only the actions included in the human-approved closeout plan. If the se
 
 Do not infer unlisted actions. But when the approved option explicitly lists fix, commit/push, reply, resolve, and watch behavior, treat that option as approval for the whole listed bundle.
 
+Before Phase 2 execution, read back the Approval Record and follow it exactly. If there is no Approval Record, return to Phase 1 Step 3 and ask the user with the mandatory user-question tool checkpoint.
+
 **For TRUE POSITIVE fixes:**
 1. Fix the code with the smallest safe change
 2. Run the project's lint and type-check
@@ -135,7 +164,7 @@ Do not infer unlisted actions. But when the approved option explicitly lists fix
    git push
    ```
 5. Capture the commit hash from the output
-6. If the approved closeout plan included posting replies and resolving this thread, reply with `npx agent-reviews --reply <comment_id> "Fixed in {hash}. {Brief description of the fix}" --resolve`; otherwise provide the suggested reply text in chat only
+6. If the approved closeout plan included posting a reply, run `npx agent-reviews --reply <comment_id> "Fixed in {hash}. {Brief description of the fix}"`; append `--resolve` only when the plan lists this thread under Resolve threads. Otherwise provide the suggested reply text in chat only
 
 **For FALSE POSITIVE replies:**
 
@@ -186,11 +215,13 @@ Completed the human-approved closeout plan. Watch ran unless the user opted out.
 - No code changes, GitHub replies, thread resolutions, commits, or pushes may happen without an approved closeout plan that lists those actions.
 - A "clear" or "low-risk" finding means the recommendation can be confident. It does not grant permission to execute.
 - Replies should document evidence, but only after the human approves posting them.
+- The final summary must list each approved `Post replies` and `Resolve threads` comment ID with the exact `agent-reviews --reply ... [--resolve]` command result.
 - "Won't fix" responses should document evidence, not just opinion
 
 ### User Interaction
 - The user decision checkpoint is mandatory after every triage packet, including comments returned by watch mode
-- Use Claude Code `AskUserQuestion` / `Question` or Codex `request_user_input` for the checkpoint. In Codex, switch modes to access `request_user_input` when needed and supported
+- Use Claude Code `AskUserQuestion` / `Question` or Codex `request_user_input` for the checkpoint. In Codex, switch modes to access `request_user_input` when needed and supported. Chat fallback is allowed only after confirming no supported user-question tool is callable
+- Always write the Approval Record before execution and cite it in the summary
 - Present tradeoffs and a recommendation before asking for selection
 - Do not guess on architectural or business logic questions
 

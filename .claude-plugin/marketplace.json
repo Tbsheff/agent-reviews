@@ -10,17 +10,17 @@
     {
       "name": "resolve-reviews",
       "source": "./",
-      "description": "Investigate all PR review comments, then execute the human-approved fix/reply/resolve/commit/push closeout plan"
+      "description": "Uses required structured approval checkpoint, then executes the human-approved fix/reply/resolve/commit/push closeout plan for all PR review comments"
     },
     {
       "name": "resolve-agent-reviews",
       "source": "./",
-      "description": "Investigate PR review bot findings, then execute the human-approved fix/reply/resolve/commit/push closeout plan"
+      "description": "Uses required structured approval checkpoint, then executes the human-approved fix/reply/resolve/commit/push closeout plan for bot findings"
     },
     {
       "name": "resolve-human-reviews",
       "source": "./",
-      "description": "Investigate human PR review comments, then execute the human-approved fix/reply/resolve/commit/push closeout plan"
+      "description": "Uses required structured approval checkpoint, then executes the human-approved fix/reply/resolve/commit/push closeout plan for human review comments"
     }
   ]
 }

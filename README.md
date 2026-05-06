@@ -168,6 +168,14 @@ Polls the GitHub API at a configurable interval and reports new comments as they
 
 ## Changelog
 
+### 1.0.4
+
+**Mandatory question-tool checkpoint.** Review skills now require `AskUserQuestion` / `Question` in Claude Code or `request_user_input` in Codex when available. Chat fallback must explicitly say the question tool was unavailable.
+
+**Approval record before execution.** After the user answers, the agent must write an `Approval Record` listing approved fixes, commit/push, replies, resolves, watch behavior, and the approval source before making changes or posting replies.
+
+**Fail-closed thread resolution.** When `--resolve` is requested, the CLI now exits non-zero if the reply posts but thread resolution is skipped or fails.
+
 ### 1.0.3
 
 **Bundled closeout approval.** Review skills now make the selected option the approval source of truth. If the user approves a bundle that lists fix, commit, push, reply, and resolve, the agent carries that closeout through without asking again after the code fix.
