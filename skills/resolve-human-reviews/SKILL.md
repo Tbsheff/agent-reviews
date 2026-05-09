@@ -6,7 +6,7 @@ compatibility: Requires git, gh (GitHub CLI), and Node.js installed.
 allowed-tools: AskUserQuestion(*) Question(*) request_user_input(*) Bash(npx agent-reviews *) Bash(pnpm dlx agent-reviews *) Bash(yarn dlx agent-reviews *) Bash(bunx agent-reviews *) Bash(git config --global --get user.email) Bash(git add *) Bash(git commit *) Bash(git push *)
 metadata:
   author: Tbsheff
-  version: "1.0.4"
+  version: "1.0.5"
   homepage: https://github.com/Tbsheff/agent-reviews
   requires_structured_user_checkpoint: true
   checkpoint_tools:
@@ -65,51 +65,43 @@ For each comment from the expanded output, read the referenced code and the revi
 - Another commit already fixed the issue
 - The comment refers to code that no longer exists
 
-### Step 3: Present Findings and Wait
+### Step 3: Ask One Human Comment at a Time
 
-After triage, present all findings to the user in one triage packet. Include clear actionable feedback, discussion items, already-addressed comments, and uncertain items. The agent may recommend a default path, but the user must select or approve the path before any PR-visible action.
+After triage, keep the full human-review batch in mind for context, but do not ask the user to approve the whole batch at once. Iterate through human comments one at a time in stable order from the expanded output. For each comment, present only that comment's evidence, tradeoffs, recommendation, and closeout options, then call the structured question tool before moving to the next comment.
 
-Use this structure:
+Use this structure for each human comment:
 
 ```text
-## Human Review Triage
+## Human Review Triage - Comment {current} of {total}
 
-### Recommendation
-I recommend Option {A/B/C}: {short rationale}.
-
-### Options
-1. Approve recommended closeout
-   - Fixes: {comment IDs}
-   - Commit/push: yes/no
-   - Post replies: {comment IDs}
-   - Resolve threads: {comment IDs}
-   - Leave open / ask author: {comment IDs}
-   - Watch after closeout: yes, unless the user opts out
-   - Tradeoff: {risk and benefit}
-
-2. Approve only low-risk actions
-   - Fixes: {comment IDs}
-   - Commit/push: yes/no
-   - Post replies: {comment IDs}
-   - Resolve threads: {comment IDs}
-   - Leaves open: {uncertain / high-risk comment IDs}
-   - Watch after closeout: yes, unless the user opts out
-   - Tradeoff: {risk and benefit}
-
-3. Override per comment
-   - Reply with comment IDs and action: fix, reply-only, skip, or ask author
-   - Tradeoff: Most control, slower closeout
-
-### Findings
-#### {comment_id} - @{reviewer} - {classification}
+### Comment
+- ID: {comment_id}
+- Reviewer: @{reviewer}
+- Classification: {classification}
 - Feedback: {what the reviewer asked for}
 - Evidence: {code facts you verified}
-- Recommended action: {fix / reply-only / skip / leave open / ask author}
 - Tradeoffs: {risk of accepting vs declining}
-- Recommended: {specific recommendation}
+- Recommendation: {specific recommendation}
+
+### Recommended Closeout
+- Fix: yes/no
+- Commit/push after approved fixes: yes/no
+- Post reply: yes/no, {suggested reply text}
+- Resolve thread: yes/no
+- Watch after closeout: yes, unless the user opts out
+
+### Options
+1. Approve recommended closeout for this comment
+   - Executes the listed fix/reply/resolve behavior for this comment
+
+2. Leave open / ask author
+   - Records the unresolved question or tradeoff for this comment
+
+3. Override per comment
+   - Choose: fix, reply-only, resolve-only, fix+reply+resolve, skip, leave open, ask author, or opt out of watch
 ```
 
-Call the host structured question tool with these numbered options, then stop and wait for the user response before editing code, replying, resolving, committing, or pushing. The selected option is the approval source of truth: if it includes commit/push, replies, or thread resolution, execute those steps after the fix and verification without asking again.
+Call the host structured question tool with the options for the current comment, then stop and wait for the user response before asking about the next comment. The selected option for each comment is the approval source of truth for that comment. Record the decision, then continue to the next comment. Do not edit code, reply, resolve, commit, or push until every human comment in the current batch has an approval record.
 
 ### Mandatory User-Question Tool Checkpoint
 
@@ -121,15 +113,15 @@ Follow this exact protocol:
 2. **Codex:** call `request_user_input` with the numbered options from the triage packet when that tool is present.
 3. **Codex mode fallback:** if `request_user_input` is not present because the current mode does not expose it, use the host's supported mode-switch mechanism when one exists, then call `request_user_input`.
 4. **Chat fallback only:** if no user-question tool is callable after the checks above, present the numbered options in chat and explicitly include `Structured checkpoint unavailable: {reason}` before the options.
-5. After the user answers, write an approval record before executing anything:
+5. After the user answers, write a per-comment approval record before asking about the next comment:
 
 ```text
-## Approval Record
-- Selected option: {number / per-comment override}
-- Fixes approved: {comment IDs or none}
+## Approval Record - Comment {comment_id}
+- Selected option: {number / override}
+- Fix approved: yes/no
 - Commit/push approved: yes/no
-- Replies approved: {comment IDs or none}
-- Resolves approved: {comment IDs or none}
+- Reply approved: yes/no
+- Resolve approved: yes/no
 - Watch approved: yes/no
 - Approval source: {AskUserQuestion / Question / request_user_input / chat fallback}
 ```
@@ -144,11 +136,11 @@ Do not proceed without user selection. Before user selection, do not:
 
 ## Phase 2: EXECUTE HUMAN-APPROVED OUTCOMES ONLY
 
-Execute only the actions included in the human-approved closeout plan. If the selected option includes fixes, make the smallest safe code changes and run verification. If the same selected option includes commit/push, replies, or thread resolution, continue through those steps without another checkpoint.
+Execute only the actions included in the per-comment approval records. After all human comments have approval records, batch approved fixes into the smallest safe code change set, run verification, and then execute approved commit/push, replies, and thread resolutions. If a specific comment's record includes commit/push, replies, or thread resolution, continue through those steps without another checkpoint after verification.
 
 Do not infer unlisted actions. But when the approved option explicitly lists fix, commit/push, reply, resolve, and watch behavior, treat that option as approval for the whole listed bundle.
 
-Before Phase 2 execution, read back the Approval Record and follow it exactly. If there is no Approval Record, return to Phase 1 Step 3 and ask the user with the mandatory user-question tool checkpoint.
+Before Phase 2 execution, read back every Approval Record and follow them exactly. If any human comment lacks an Approval Record, return to Phase 1 Step 3 and ask about that comment with the mandatory user-question tool checkpoint.
 
 **For ACTIONABLE fixes:**
 1. Fix the code with the smallest safe change
@@ -189,7 +181,7 @@ After completing the approved closeout plan, start watch mode unless the user ex
 
 Run `npx agent-reviews --watch --humans-only` as a background task.
 
-When watch mode returns new comments, treat them as a new triage batch: investigate and present findings, then stop for human review. Do not auto-fix, auto-reply, auto-resolve, commit, push, or continue the watch loop without a new approved closeout plan for that batch.
+When watch mode returns new comments, process them one at a time through the same structured question checkpoint. Do not auto-fix, auto-reply, auto-resolve, commit, push, or continue the watch loop without a per-comment approval record for each new comment.
 
 When the watcher exits with no new comments, move to the Summary Report.
 
@@ -209,8 +201,11 @@ After executing the human-approved actions and any approved watch pass, provide 
 ### Needs User / Left Open
 - {comment_id}: {reason it remains untouched}
 
+### Approval Records
+- {comment_id}: {selected option, approval source, approved actions}
+
 ### Status
-Completed the human-approved closeout plan. Watch ran unless the user opted out.
+Completed the human-approved per-comment closeout plan. Watch ran unless the user opted out.
 ```
 
 ## Important Notes
@@ -226,7 +221,7 @@ Completed the human-approved closeout plan. Watch ran unless the user opted out.
 ### User Interaction
 - The user decision checkpoint is mandatory after every triage packet, including comments returned by watch mode
 - Use Claude Code `AskUserQuestion` / `Question` or Codex `request_user_input` for the checkpoint. In Codex, switch modes to access `request_user_input` when needed and supported. Chat fallback is allowed only after confirming no supported user-question tool is callable
-- Always write the Approval Record before execution and cite it in the summary
+- Always write an Approval Record for each comment before execution and cite each record in the summary
 - Present tradeoffs and a recommendation before asking for selection
 - Human reviewers often have context you don't - defer to the author when unsure
 

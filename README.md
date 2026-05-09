@@ -111,11 +111,11 @@ The skills automate the review-comment investigation while keeping every PR-visi
 
 1. Fetch unanswered comments (all, bot-only, or human-only depending on skill)
 2. Evaluate each finding (true positive, false positive, actionable, etc.)
-3. Present every finding with evidence, tradeoffs, and a recommended action
-4. Wait for explicit human approval of a closeout plan before any fix, reply, resolve, commit, or push
-5. Execute the approved closeout bundle end-to-end, including replies and thread resolution when listed
-6. Watch for new comments after closeout unless the user opts out, then return to triage and stop for review
-7. Report a summary of approved actions taken and anything left open
+3. Ask about each comment one at a time with evidence, tradeoffs, and a recommended action
+4. Record explicit per-comment approval before any fix, reply, resolve, commit, or push
+5. Execute the approved closeout batch end-to-end, including replies and thread resolution when listed
+6. Watch for new comments after closeout unless the user opts out, then process them one at a time
+7. Report a summary of approved actions, approval records, and anything left open
 
 ### Skill behavior
 
@@ -123,7 +123,7 @@ The skills automate the review-comment investigation while keeping every PR-visi
 - **False positives** are recommended for reply-only handling with `Won't fix: {reason}`, then replied to and resolved when that bundle is approved
 - **Uncertain findings** are surfaced with tradeoffs instead of guessed through
 - Fix, reply, resolve, commit, and push remain gated unless explicitly bundled in the selected approval option
-- Watch mode runs after closeout unless the user opts out; any new comments become a fresh triage packet
+- Watch mode runs after closeout unless the user opts out; any new comments go through the same per-comment approval flow
 
 ## How It Works
 
@@ -167,6 +167,12 @@ Each comment displays its reply status:
 Polls the GitHub API at a configurable interval and reports new comments as they appear. Outputs both formatted text and JSON for AI agent consumption. Exits automatically after a configurable inactivity timeout (default: 10 minutes).
 
 ## Changelog
+
+### 1.0.5
+
+**Per-comment approval flow.** Review skills now triage the whole batch for context, then use the structured question checkpoint on one comment at a time. Each comment gets its own approval record before the agent moves to the next comment.
+
+**Batch execution after decisions.** After all comment-level decisions are recorded, the agent executes the approved closeout batch, preserving grouped fixes and commits while keeping the human review flow focused.
 
 ### 1.0.4
 
