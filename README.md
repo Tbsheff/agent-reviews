@@ -168,9 +168,13 @@ Polls the GitHub API at a configurable interval and reports new comments as they
 
 ## Changelog
 
+### 1.0.6
+
+**Clarified batch execution.** Per-comment questions now record approvals only. Skills explicitly wait until every comment in the fetched batch has an approval record before making code changes, posting replies, resolving threads, committing, or pushing.
+
 ### 1.0.5
 
-**Per-comment approval flow.** Review skills now triage the whole batch for context, then use the structured question checkpoint on one comment at a time. Each comment gets its own approval record before the agent moves to the next comment.
+**Per-comment approval flow.** Review skills now triage the whole batch for context, then use the structured question checkpoint on one comment at a time. Each answer records a decision, and execution waits until every comment has an approval record.
 
 **Batch execution after decisions.** After all comment-level decisions are recorded, the agent executes the approved closeout batch, preserving grouped fixes and commits while keeping the human review flow focused.
 

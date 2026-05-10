@@ -1,6 +1,6 @@
 {
   "name": "agent-reviews",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "CLI and agent skills for investigating GitHub PR review comments and executing human-approved closeout plans.",
   "license": "MIT",
   "author": "Tyler Sheffield",

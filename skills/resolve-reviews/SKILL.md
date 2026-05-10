@@ -6,7 +6,7 @@ compatibility: Requires git, gh (GitHub CLI), and Node.js installed.
 allowed-tools: AskUserQuestion(*) Question(*) request_user_input(*) Bash(npx agent-reviews *) Bash(pnpm dlx agent-reviews *) Bash(yarn dlx agent-reviews *) Bash(bunx agent-reviews *) Bash(git config --global --get user.email) Bash(git add *) Bash(git commit *) Bash(git push *)
 metadata:
   author: Tbsheff
-  version: "1.0.5"
+  version: "1.0.6"
   homepage: https://github.com/Tbsheff/agent-reviews
   requires_structured_user_checkpoint: true
   checkpoint_tools:
@@ -117,7 +117,7 @@ Use this structure for each comment:
 
 ### Options
 1. Approve recommended closeout for this comment
-   - Executes the listed fix/reply/resolve behavior for this comment
+   - Records approval for the listed fix/reply/resolve behavior for this comment; execution happens later in Phase 2 after every comment in the current batch has an Approval Record
 
 2. Leave open / ask author
    - Records the unresolved question or tradeoff for this comment
@@ -126,7 +126,7 @@ Use this structure for each comment:
    - Choose: fix, reply-only, resolve-only, fix+reply+resolve, skip, leave open, ask author, or opt out of watch
 ```
 
-Call the host structured question tool with the options for the current comment, then stop and wait for the user response before asking about the next comment. The selected option for each comment is the approval source of truth for that comment. Record the decision, then continue to the next comment. Do not edit code, reply, resolve, commit, or push until every comment in the current batch has an approval record.
+Call the host structured question tool with the options for the current comment, then stop and wait for the user response before asking about the next comment. The selected option for each comment is the approval source of truth for that comment. Record the decision only, then continue to the next comment; do not execute any approved action between per-comment questions. No code edits, replies, resolves, commits, or pushes may happen until every comment in the current batch has an Approval Record.
 
 ### Mandatory User-Question Tool Checkpoint
 
@@ -161,7 +161,7 @@ Do not proceed without user selection. Before user selection, do not:
 
 ## Phase 2: EXECUTE HUMAN-APPROVED OUTCOMES ONLY
 
-Execute only the actions included in the per-comment approval records. After all comments have approval records, batch approved fixes into the smallest safe code change set, run verification, and then execute approved commit/push, replies, and thread resolutions. If a specific comment's record includes commit/push, replies, or thread resolution, continue through those steps without another checkpoint after verification.
+Execute only the actions included in the per-comment approval records, and execute them as one batch after every comment in the current batch has an Approval Record. This phase starts only after all comments in the fetched batch have approval records. Batch approved fixes into the smallest safe code change set, run verification, and then execute approved commit/push, replies, and thread resolutions. If a specific comment's record includes commit/push, replies, or thread resolution, continue through those steps without another checkpoint after verification.
 
 Do not infer unlisted actions. But when the approved option explicitly lists fix, commit/push, reply, resolve, and watch behavior, treat that option as approval for the whole listed bundle.
 
